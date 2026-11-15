@@ -9,7 +9,7 @@ async function runTests() {
 
   // Test 1: Verify product catalog integrity
   console.log('1. Testing product catalog...');
-  assert.strictEqual(BACKEND_PRODUCTS.length, 7, 'Should have 7 courses listed');
+  assert.strictEqual(BACKEND_PRODUCTS.length, 8, 'Should have 8 courses listed');
   const webDesign = BACKEND_PRODUCTS.find((p) => p.id === 'web-designing-course');
   assert.ok(webDesign, 'Web Designing Course must exist');
   assert.strictEqual(webDesign?.price, 9999, 'Web Designing Course price should be 9999');
@@ -21,6 +21,10 @@ async function runTests() {
   const htmlCourse = BACKEND_PRODUCTS.find((p) => p.id === 'html-css-masterclass');
   assert.ok(htmlCourse, 'HTML/CSS course must exist');
   assert.strictEqual(htmlCourse?.price, 499, 'HTML/CSS course price must be 499');
+
+  const reactCourse = BACKEND_PRODUCTS.find((p) => p.id === 'fullstack-react-nextjs');
+  assert.ok(reactCourse, 'React & Next.js course must exist');
+  assert.strictEqual(reactCourse?.price, 4999, 'React & Next.js course price must be 4999');
 
   const biddableCourse = BACKEND_PRODUCTS.find((p) => p.id === 'founder-creator-masterclass');
   assert.ok(biddableCourse, 'Founder Masterclass must exist');
@@ -35,10 +39,11 @@ async function runTests() {
     { productId: 'python-course', quantity: 1 },
     { productId: 'fullstack-javascript-bootcamp', quantity: 1 },
     { productId: 'html-css-masterclass', quantity: 1 },
+    { productId: 'fullstack-react-nextjs', quantity: 1 },
   ]);
   assert.strictEqual(calc1.valid, true, 'Calculation should be valid');
-  assert.strictEqual(calc1.totalAmount, 9999 * 2 + 99999 + 999 + 499, 'Total must match server prices');
-  assert.strictEqual(calc1.orderItems.length, 4);
+  assert.strictEqual(calc1.totalAmount, 9999 * 2 + 99999 + 999 + 499 + 4999, 'Total must match server prices');
+  assert.strictEqual(calc1.orderItems.length, 5);
 
   // Test custom bid calculation
   const calcBid = validateAndCalculateItems([

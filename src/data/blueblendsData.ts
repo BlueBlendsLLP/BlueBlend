@@ -259,6 +259,34 @@ export const PRODUCTS: Product[] = [
       'Lifetime access pass & personalized founder certificate',
     ],
   },
+  {
+    id: 'fullstack-react-nextjs',
+    slug: 'fullstack-react-nextjs',
+    title: 'Full-Stack React & Next.js Masterclass',
+    category: 'Courses',
+    price: 4999,
+    formattedPrice: '₹4,999.00',
+    shortDescription:
+      'Build production-ready, full-stack web applications with Next.js 15, React Server Components, TypeScript, Tailwind CSS, and PostgreSQL.',
+    fullDescription:
+      'Build production-ready, full-stack web applications with Next.js 15, React Server Components, TypeScript, Tailwind CSS, and PostgreSQL. Master server actions, authentication, database migrations, caching strategies, and seamless deployment to cloud environments.',
+    image: heroStudioImg,
+    imageAlt: 'Full-Stack React and Next.js Masterclass course cover',
+    duration: '6 Weeks · Self-Paced',
+    level: 'Intermediate',
+    modules: [
+      '01. Next.js 15 App Router & Server Components',
+      '02. Server Actions, Form Mutations & Zod Validation',
+      '03. Database Modeling with Prisma & PostgreSQL',
+      '04. Auth, Caching Layers & Production Deployment',
+    ],
+    deliverables: [
+      '22 HD video modules with structured repository milestones',
+      'Complete SaaS starter kit with auth, Stripe/Cashfree & database setup',
+      'Architectural review rubrics & production deployment blueprints',
+      'Lifetime curriculum updates & certificate of completion',
+    ],
+  },
 ];
 
 export const TESTIMONIALS: Testimonial[] = [
