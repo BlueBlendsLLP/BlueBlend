@@ -1,0 +1,27 @@
+services:
+  blueblends:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: blueblends:latest
+    container_name: blueblends-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - APP_URL=${APP_URL:-http://localhost:5000}
+      - CASHFREE_APP_ID=${CASHFREE_APP_ID:-}
+      - CASHFREE_SECRET_KEY=${CASHFREE_SECRET_KEY:-}
+      - CASHFREE_ENVIRONMENT=${CASHFREE_ENVIRONMENT:-PRODUCTION}
+      - CASHFREE_API_VERSION=${CASHFREE_API_VERSION:-2023-08-01}
+    env_file:
+      - path: .env
+        required: false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

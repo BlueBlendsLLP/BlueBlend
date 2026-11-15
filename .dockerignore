@@ -1,0 +1,21 @@
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+dist
+dist-server
+.git
+.gitignore
+.github
+
+# Do not bake secret keys into the image
+.env
+.env.local
+.env.*.local
+
+.DS_Store
+*.log
+.gemini
+scratch

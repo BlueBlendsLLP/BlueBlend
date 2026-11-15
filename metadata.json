@@ -1,0 +1,6 @@
+{
+  "name": "Blueblends",
+  "description": "Digital products, web design, system design, C++, and Python courses by BlueBlends Digital Services LLP.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
