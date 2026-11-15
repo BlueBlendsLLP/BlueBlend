@@ -24,6 +24,7 @@ import { ProductDetailModal } from './components/ProductDetailModal';
 import { ArticleReaderModal } from './components/ArticleReaderModal';
 import { CartDrawer, CartItem, ConfirmedOrderDetails } from './components/CartDrawer';
 import { AuthModal } from './components/AuthModal';
+import { API_BASE } from './config/api.ts';
 
 const CART_STORAGE_KEY = 'blueblends_cart_v1';
 const USER_STORAGE_KEY = 'blueblends_user_v1';
@@ -43,7 +44,7 @@ export default function App() {
     const returnOrderId = params.get('order_id');
     if (returnOrderId) {
       window.history.replaceState({}, '', window.location.pathname);
-      fetch(`/api/payment/status/${encodeURIComponent(returnOrderId)}`)
+      fetch(`${API_BASE}/api/payment/status/${encodeURIComponent(returnOrderId)}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.success && data.status === 'PAID') {

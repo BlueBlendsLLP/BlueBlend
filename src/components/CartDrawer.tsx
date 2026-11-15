@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Product } from '../data/blueblendsData';
 import { ResilientImage } from './ResilientImage';
+import { API_BASE } from '../config/api.ts';
 
 declare global {
   interface Window {
@@ -172,7 +173,7 @@ export function CartDrawer({
       const baseOrigin = window.location.origin.replace(/^http:\/\//i, 'https://');
       const returnUrl = `${baseOrigin}/?order_id={order_id}`;
 
-      const response = await fetch('/api/payment/create-order', {
+      const response = await fetch(`${API_BASE}/api/payment/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -218,7 +219,7 @@ export function CartDrawer({
 
         // If _modal was chosen and payment completes inside modal:
         if (checkoutTarget === '_modal') {
-          const verifyRes = await fetch(`/api/payment/status/${orderId}`);
+          const verifyRes = await fetch(`${API_BASE}/api/payment/status/${orderId}`);
           const verifyData = await verifyRes.json();
           if (verifyData.success && verifyData.status === 'PAID') {
             setConfirmedOrder({
@@ -238,7 +239,7 @@ export function CartDrawer({
       }
 
       // 3. Fallback: Simulated sandbox mode (if offline or credentials missing)
-      const simRes = await fetch('/api/payment/simulate-pay', {
+      const simRes = await fetch(`${API_BASE}/api/payment/simulate-pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId }),
@@ -272,7 +273,7 @@ export function CartDrawer({
       const customerEmail = email.trim() || 'learner@blueblends.com';
       const customerPhone = phone.trim() || '9876543210';
 
-      const res = await fetch('/api/payment/create-order', {
+      const res = await fetch(`${API_BASE}/api/payment/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -283,7 +284,7 @@ export function CartDrawer({
       const data = await res.json();
       const actualOrderId = data.orderId || `order_${Date.now()}_sim`;
 
-      const simRes = await fetch('/api/payment/simulate-pay', {
+      const simRes = await fetch(`${API_BASE}/api/payment/simulate-pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: actualOrderId }),

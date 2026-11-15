@@ -112,7 +112,9 @@ export class OrderService {
       returnUrl = returnUrl.replace(/^http:\/\//i, 'https://');
     }
 
-    let notifyUrl: string | undefined = `${config.appUrl}/api/payment/webhook`;
+    let notifyUrl: string | undefined = process.env.BACKEND_URL
+      ? `${process.env.BACKEND_URL.replace(/\/+$/, '')}/api/payment/webhook`
+      : `${config.appUrl}/api/payment/webhook`;
     if (notifyUrl.startsWith('http://')) {
       notifyUrl = notifyUrl.replace(/^http:\/\//i, 'https://');
     }
