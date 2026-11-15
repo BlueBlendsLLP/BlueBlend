@@ -200,10 +200,10 @@ export function CartDrawer({
         throw new Error(orderData.error || 'Failed to initialize payment order');
       }
 
-      const { orderId, paymentSessionId, isSimulated, environment } = orderData;
+        const { orderId, paymentSessionId, environment } = orderData;
 
       // 2. Open Cashfree Gateway (Redirect or Modal)
-      if (!isSimulated && paymentSessionId) {
+      if (paymentSessionId) {
         const CashfreeSDK = await ensureCashfreeLoaded();
         const cashfree = CashfreeSDK({
           mode: environment === 'production' ? 'production' : 'sandbox',
@@ -242,77 +242,10 @@ export function CartDrawer({
         return;
       }
 
-      // 3. Fallback: Simulated sandbox mode (if offline or credentials missing)
-      const simRes = await fetch(`${API_BASE}/api/payment/simulate-pay`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId }),
-      });
-      const simData = await simRes.json();
-
-      setConfirmedOrder({
-        orderId,
-        cfPaymentId: simData.order?.cfPaymentId || `sim_${Date.now()}`,
-        amount: simData.order?.amount || subtotal,
-        customerName: fullName.trim(),
-        customerEmail: email.trim(),
-        accessLinks: simData.order?.accessLinks,
-        isSimulated: true,
-      });
-      setStep('confirmed');
-      onClearCart();
+      throw new Error('Cashfree payment session could not be established. Please check your network and try again.');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setFormError(msg);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleSimulatedDemoCheckout = async () => {
-    setIsProcessing(true);
-    setFormError('');
-    try {
-      const customerName = fullName.trim() || 'Demo Learner';
-      const customerEmail = email.trim() || 'learner@blueblends.com';
-      const customerPhone = phone.trim() || '9876543210';
-
-      const res = await fetch(`${API_BASE}/api/payment/create-order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: items.map((i) => ({
-            productId: i.product.id,
-            quantity: i.quantity,
-            customPrice: i.customPrice,
-          })),
-          customer: { name: customerName, email: customerEmail, phone: customerPhone },
-        }),
-      });
-      const data = await res.json();
-      const actualOrderId = data.orderId || `order_${Date.now()}_sim`;
-
-      const simRes = await fetch(`${API_BASE}/api/payment/simulate-pay`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: actualOrderId }),
-      });
-      const simData = await simRes.json();
-
-      setConfirmedOrder({
-        orderId: actualOrderId,
-        cfPaymentId: simData.order?.cfPaymentId || `sim_${Date.now()}`,
-        amount: simData.order?.amount || subtotal,
-        customerName,
-        customerEmail,
-        accessLinks: simData.order?.accessLinks,
-        isSimulated: true,
-      });
-      setStep('confirmed');
-      onClearCart();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setFormError(`Simulation failed: ${msg}`);
     } finally {
       setIsProcessing(false);
     }
@@ -397,11 +330,6 @@ export function CartDrawer({
                   <span className="font-mono text-xs font-semibold text-[#005EFF] bg-[#EBF3FF] px-2 py-1 rounded">
                     Order #{confirmedOrder.orderId}
                   </span>
-                  {confirmedOrder.isSimulated && (
-                    <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E]">
-                      Demo / Sandbox
-                    </span>
-                  )}
                 </div>
 
                 <h3 className="font-display text-2xl font-bold text-[#0D0D0D]">
@@ -764,19 +692,8 @@ export function CartDrawer({
               </div>
 
               {formError && (
-                <div role="alert" className="p-3.5 bg-[#FEF2F2] border border-[#FCA5A5] rounded-xl space-y-2.5 text-xs text-[#DC2626]">
+                <div role="alert" className="p-3.5 bg-[#FEF2F2] border border-[#FCA5A5] rounded-xl text-xs text-[#DC2626]">
                   <p className="leading-relaxed font-medium">{formError}</p>
-                  <div className="pt-1 flex items-center justify-between gap-2 border-t border-[#FCA5A5]/60 pt-2">
-                    <span className="text-[11px] text-[#7F1D1D]">Need to test without gateway approval?</span>
-                    <button
-                      type="button"
-                      onClick={handleSimulatedDemoCheckout}
-                      disabled={isProcessing}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap shadow-sm disabled:opacity-50"
-                    >
-                      <span>Simulate Demo Order</span>
-                    </button>
-                  </div>
                 </div>
               )}
             </form>

@@ -39,10 +39,7 @@ export class PaymentController {
         orderCurrency: result.order.currency,
         itemsCount: result.order.items.length,
         environment: config.environment.toLowerCase(),
-        isSimulated: result.isSimulated || false,
-        message: result.isSimulated
-          ? 'Order created in simulated sandbox mode (CASHFREE_APP_ID/CASHFREE_SECRET_KEY not set).'
-          : 'Order created successfully with Cashfree.',
+        message: 'Order created successfully with Cashfree.',
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

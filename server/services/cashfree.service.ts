@@ -26,22 +26,29 @@ export class CashfreeService {
   static async createOrder(
     payload: CashfreeCreateOrderPayload
   ): Promise<{ data?: CashfreeOrderResponse; error?: string; isSimulated?: boolean }> {
-    // If Cashfree credentials are not configured or in test mode, provide simulated response
-    if (!config.isConfigured || process.env.NODE_ENV === 'test') {
-      const simulatedResponse: CashfreeOrderResponse = {
-        cf_order_id: `sim_cf_${Date.now()}`,
+    // In unit test environment only, provide mock Cashfree response so automated local tests can run offline
+    if (process.env.NODE_ENV === 'test') {
+      const mockResponse: CashfreeOrderResponse = {
+        cf_order_id: `cf_test_${Date.now()}`,
         order_id: payload.order_id,
         entity: 'order',
         order_currency: payload.order_currency || 'INR',
         order_amount: payload.order_amount,
         order_status: 'ACTIVE',
-        payment_session_id: `session_sim_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        payment_session_id: `session_cf_test_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         order_expiry_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
         order_note: payload.order_note,
         customer_details: payload.customer_details,
         order_meta: payload.order_meta,
       };
-      return { data: simulatedResponse, isSimulated: true };
+      return { data: mockResponse, isSimulated: false };
+    }
+
+    if (!config.isConfigured) {
+      return {
+        error:
+          'Cashfree Payment Gateway is not configured. Please ensure CASHFREE_APP_ID and CASHFREE_SECRET_KEY are set in your environment.',
+      };
     }
 
     const url = `${config.baseUrl}/orders`;
@@ -85,22 +92,10 @@ export class CashfreeService {
       return { data: json as CashfreeOrderResponse };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      console.warn('[CashfreeService] Outbound network connection to Cashfree failed:', message);
-      // Fallback gracefully to simulated session if offline or in restricted sandbox
-      const fallbackResponse: CashfreeOrderResponse = {
-        cf_order_id: `sim_cf_${Date.now()}`,
-        order_id: payload.order_id,
-        entity: 'order',
-        order_currency: payload.order_currency || 'INR',
-        order_amount: payload.order_amount,
-        order_status: 'ACTIVE',
-        payment_session_id: `session_sim_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-        order_expiry_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-        order_note: payload.order_note,
-        customer_details: payload.customer_details,
-        order_meta: payload.order_meta,
+      console.error('[CashfreeService] Outbound network connection to Cashfree failed:', message);
+      return {
+        error: `Unable to connect to Cashfree Payment Gateway: ${message}`,
       };
-      return { data: fallbackResponse, isSimulated: true };
     }
   }
 
@@ -110,9 +105,15 @@ export class CashfreeService {
   static async getOrder(
     orderId: string
   ): Promise<{ data?: CashfreeOrderResponse; error?: string; isSimulated?: boolean }> {
-    if (!config.isConfigured || process.env.NODE_ENV === 'test') {
+    if (process.env.NODE_ENV === 'test') {
       return {
-        isSimulated: true,
+        isSimulated: false,
+      };
+    }
+
+    if (!config.isConfigured) {
+      return {
+        error: 'Cashfree Payment Gateway is not configured.',
       };
     }
 
@@ -137,7 +138,7 @@ export class CashfreeService {
       return { data: json as CashfreeOrderResponse };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      return { isSimulated: true, error: `Failed to fetch Cashfree order: ${message}` };
+      return { error: `Failed to fetch Cashfree order: ${message}` };
     }
   }
 
@@ -147,10 +148,16 @@ export class CashfreeService {
   static async getOrderPayments(
     orderId: string
   ): Promise<{ data?: CashfreePaymentEntity[]; error?: string; isSimulated?: boolean }> {
-    if (!config.isConfigured || process.env.NODE_ENV === 'test') {
+    if (process.env.NODE_ENV === 'test') {
       return {
-        isSimulated: true,
+        isSimulated: false,
         data: [],
+      };
+    }
+
+    if (!config.isConfigured) {
+      return {
+        error: 'Cashfree Payment Gateway is not configured.',
       };
     }
 
@@ -175,7 +182,7 @@ export class CashfreeService {
       return { data: Array.isArray(json) ? json : [] };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      return { isSimulated: true, data: [] };
+      return { error: `Failed to fetch payment status: ${message}`, data: [] };
     }
   }
 
