@@ -124,7 +124,6 @@ export function CartDrawer({
   const [phone, setPhone] = useState('');
   const [formError, setFormError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [checkoutTarget, setCheckoutTarget] = useState<'_self' | '_modal'>('_self');
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrderDetails | null>(
     initialOrder || null
   );
@@ -202,42 +201,23 @@ export function CartDrawer({
 
         const { orderId, paymentSessionId, environment } = orderData;
 
-      // 2. Open Cashfree Gateway (Redirect or Modal)
+      // 2. Open Cashfree Gateway via standard direct redirect
       if (paymentSessionId) {
         const CashfreeSDK = await ensureCashfreeLoaded();
         const cashfree = CashfreeSDK({
           mode: environment === 'production' ? 'production' : 'sandbox',
         });
 
-        // Trigger checkout (Redirect or Modal)
+        // Trigger full-page redirect to Cashfree Payment Gateway
         const checkoutRes = await cashfree.checkout({
           paymentSessionId,
-          redirectTarget: checkoutTarget,
+          redirectTarget: '_self',
         });
 
         if (checkoutRes && checkoutRes.error) {
           setIsProcessing(false);
           setFormError(checkoutRes.error.message || 'Payment redirection failed.');
           return;
-        }
-
-        // If _modal was chosen and payment completes inside modal:
-        if (checkoutTarget === '_modal') {
-          const verifyRes = await fetch(`${API_BASE}/api/payment/status/${orderId}`);
-          const verifyData = await verifyRes.json();
-          if (verifyData.success && verifyData.status === 'PAID') {
-            setConfirmedOrder({
-              orderId,
-              cfPaymentId: verifyData.cfPaymentId,
-              amount: verifyData.amount || subtotal,
-              customerName: fullName.trim(),
-              customerEmail: email.trim(),
-              accessLinks: verifyData.accessLinks,
-              isSimulated: false,
-            });
-            setStep('confirmed');
-            onClearCart();
-          }
         }
         return;
       }
@@ -609,34 +589,6 @@ export function CartDrawer({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-[#626262] bg-[#F9FAFB] p-3 rounded-xl border border-black/[0.08]">
-                <span className="font-medium text-[#0D0D0D]">Checkout Flow:</span>
-                <div className="flex items-center gap-3">
-                  <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="checkoutTarget"
-                      value="_self"
-                      checked={checkoutTarget === '_self'}
-                      onChange={() => setCheckoutTarget('_self')}
-                      className="text-[#005EFF] focus:ring-[#005EFF]"
-                    />
-                    <span className="text-xs text-[#0D0D0D] font-medium">Gateway Redirect</span>
-                  </label>
-                  <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="checkoutTarget"
-                      value="_modal"
-                      checked={checkoutTarget === '_modal'}
-                      onChange={() => setCheckoutTarget('_modal')}
-                      className="text-[#005EFF] focus:ring-[#005EFF]"
-                    />
-                    <span className="text-xs text-[#0D0D0D] font-medium">Popup Modal</span>
-                  </label>
-                </div>
-              </div>
-
               <div className="space-y-1.5">
                 <label
                   htmlFor="checkout-name"
@@ -742,11 +694,7 @@ export function CartDrawer({
                   ) : (
                     <>
                       <ShieldCheck className="w-4 h-4" />
-                      <span>
-                        {checkoutTarget === '_self'
-                          ? `Pay ₹${subtotal.toLocaleString('en-IN')}.00 (Redirect)`
-                          : `Pay ₹${subtotal.toLocaleString('en-IN')}.00 (Modal)`}
-                      </span>
+                      <span>Pay ₹{subtotal.toLocaleString('en-IN')}.00 with Cashfree</span>
                     </>
                   )}
                 </button>
