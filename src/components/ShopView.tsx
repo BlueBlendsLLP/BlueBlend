@@ -190,13 +190,18 @@ export function ShopView({
                         onClick={() => onSelectProduct(product)}
                         className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#005EFF]"
                       >
-                        <div className="aspect-[4/3] w-full bg-[#F3F3F3] overflow-hidden">
+                        <div className="relative aspect-[4/3] w-full bg-[#F3F3F3] overflow-hidden">
                           <ResilientImage
                             src={product.image}
                             alt={product.imageAlt}
                             fallbackLabel={product.title}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                           />
+                          {product.isBiddable && (
+                            <span className="absolute top-2.5 left-2.5 px-2.5 py-1 text-[11px] font-semibold bg-[#0D0D0D]/90 text-white backdrop-blur rounded-full shadow-sm">
+                              ⚡ Name Your Price
+                            </span>
+                          )}
                         </div>
                       </button>
 
@@ -222,15 +227,24 @@ export function ShopView({
                     </div>
 
                     <div className="px-5 pb-5 pt-3 border-t border-black/[0.06] flex items-center justify-between gap-3">
-                      <span className="font-mono text-[15px] font-medium text-[#0D0D0D] tabular-nums">
-                        {product.formattedPrice}
-                      </span>
+                      <div>
+                        <span className="font-mono text-[15px] font-medium text-[#0D0D0D] tabular-nums block">
+                          {product.formattedPrice}
+                        </span>
+                        {product.isBiddable && (
+                          <span className="text-[11px] text-[#005EFF] font-medium">Open Bidding</span>
+                        )}
+                      </div>
                       <button
                         type="button"
-                        onClick={() => onAddToCart(product)}
-                        className="px-3.5 py-2 min-h-[40px] text-xs font-medium text-white bg-[#005EFF] hover:bg-[#0F2CCF] rounded-lg transition-colors duration-150 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#005EFF]"
+                        onClick={() => (product.isBiddable ? onSelectProduct(product) : onAddToCart(product))}
+                        className={`px-3.5 py-2 min-h-[40px] text-xs font-medium rounded-lg transition-colors duration-150 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#005EFF] ${
+                          product.isBiddable
+                            ? 'bg-[#0D0D0D] hover:bg-[#212121] text-white'
+                            : 'bg-[#005EFF] hover:bg-[#0F2CCF] text-white'
+                        }`}
                       >
-                        Add to Cart
+                        {product.isBiddable ? 'Bid Your Price' : 'Add to Cart'}
                       </button>
                     </div>
                   </article>

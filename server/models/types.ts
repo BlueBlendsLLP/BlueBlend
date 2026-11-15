@@ -17,11 +17,14 @@ export interface BackendProduct {
   level: string;
   modules: string[];
   deliverables: string[];
+  isBiddable?: boolean;
+  minBid?: number;
 }
 
 export interface CartItemInput {
   productId: string;
   quantity: number;
+  customPrice?: number;
 }
 
 export interface CustomerInput {
@@ -37,6 +40,8 @@ export interface OrderItem {
   price: number;
   quantity: number;
   subtotal: number;
+  isBiddable?: boolean;
+  bidAmount?: number;
 }
 
 export type OrderPaymentStatus =

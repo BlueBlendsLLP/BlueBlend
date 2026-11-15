@@ -44,8 +44,8 @@ export function FeaturedProductsSection({
           </button>
         </div>
 
-        {/* 4-Column Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Product Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {products.map((product) => (
             <article
               key={product.id}
@@ -57,13 +57,18 @@ export function FeaturedProductsSection({
                   onClick={() => onSelectProduct(product)}
                   className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#005EFF]"
                 >
-                  <div className="aspect-[4/3] w-full bg-[#F3F3F3] overflow-hidden">
+                  <div className="relative aspect-[4/3] w-full bg-[#F3F3F3] overflow-hidden">
                     <ResilientImage
                       src={product.image}
                       alt={product.imageAlt}
                       fallbackLabel={product.title}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     />
+                    {product.isBiddable && (
+                      <span className="absolute top-2.5 left-2.5 px-2.5 py-1 text-[11px] font-semibold bg-[#0D0D0D]/90 text-white backdrop-blur rounded-full shadow-sm">
+                        ⚡ Name Your Price
+                      </span>
+                    )}
                   </div>
                 </button>
 
@@ -97,10 +102,14 @@ export function FeaturedProductsSection({
                 </div>
                 <button
                   type="button"
-                  onClick={() => onAddToCart(product)}
-                  className="px-3.5 py-2 min-h-[40px] text-xs font-medium text-[#0D0D0D] bg-[#F3F3F3] hover:bg-[#0D0D0D] hover:text-white rounded-lg transition-colors duration-150 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#005EFF]"
+                  onClick={() => (product.isBiddable ? onSelectProduct(product) : onAddToCart(product))}
+                  className={`px-3.5 py-2 min-h-[40px] text-xs font-medium rounded-lg transition-colors duration-150 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#005EFF] ${
+                    product.isBiddable
+                      ? 'bg-[#005EFF] hover:bg-[#0F2CCF] text-white'
+                      : 'bg-[#F3F3F3] hover:bg-[#0D0D0D] hover:text-white text-[#0D0D0D]'
+                  }`}
                 >
-                  Add to Cart
+                  {product.isBiddable ? 'Bid Your Price' : 'Add to Cart'}
                 </button>
               </div>
             </article>

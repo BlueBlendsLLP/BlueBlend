@@ -1,4 +1,4 @@
-import { BackendProduct, OrderItem } from '../models/types.ts';
+import { BackendProduct, CartItemInput, OrderItem } from '../models/types.ts';
 
 export const BACKEND_PRODUCTS: BackendProduct[] = [
   {
@@ -105,6 +105,86 @@ export const BACKEND_PRODUCTS: BackendProduct[] = [
       'Lifetime curriculum updates & digital certificate',
     ],
   },
+  {
+    id: 'fullstack-javascript-bootcamp',
+    slug: 'fullstack-javascript-bootcamp',
+    title: 'JavaScript & Modern Frontend Bootcamp',
+    category: 'Courses',
+    price: 999,
+    formattedPrice: '₹999.00',
+    shortDescription:
+      'Master modern ES6+, asynchronous JavaScript, DOM manipulation, and React component architecture with hands-on projects.',
+    fullDescription:
+      'Master modern ES6+, asynchronous JavaScript (Promises, async/await), DOM manipulation, and React frontend architecture. Build interactive web applications with clean code patterns, state management, and API integrations.',
+    duration: '4 Weeks · Self-Paced',
+    level: 'Beginner to Intermediate',
+    modules: [
+      '01. Modern ES6+ Syntax, Scopes & Closures',
+      '02. Asynchronous JavaScript, Fetch API & Async/Await',
+      '03. DOM Architecture, Events & Interactive UIs',
+      '04. React Fundamentals, Hooks & State Management',
+    ],
+    deliverables: [
+      '16 HD studio lessons with annotated code sandboxes',
+      '5 hands-on portfolio projects (Weather App, Task Manager, API Dashboard)',
+      'Downloadable cheat sheets & interview prep guide',
+      'Lifetime curriculum updates & certificate of completion',
+    ],
+  },
+  {
+    id: 'html-css-masterclass',
+    slug: 'html-css-masterclass',
+    title: 'HTML5 & Modern CSS Masterclass',
+    category: 'Courses',
+    price: 499,
+    formattedPrice: '₹499.00',
+    shortDescription:
+      'Learn modern semantic HTML5 and responsive CSS from scratch, including Flexbox, CSS Grid, animations, and mobile-first design.',
+    fullDescription:
+      'Learn modern semantic HTML5 and responsive CSS styling from scratch. Gain practical expertise in Flexbox, CSS Grid, typography, responsive layouts, and modern CSS variables to build beautiful websites from day one.',
+    duration: '2 Weeks · Self-Paced',
+    level: 'Beginner',
+    modules: [
+      '01. Semantic HTML5 Elements & Web Accessibility',
+      '02. CSS Box Model, Specificity & Custom Properties',
+      '03. Modern Layouts with Flexbox & CSS Grid',
+      '04. Responsive Breakpoints, Transitions & Keyframe Animations',
+    ],
+    deliverables: [
+      '10 concise video lessons & step-by-step code walkthroughs',
+      '3 responsive website templates (Landing Page, Portfolio, Newsletter)',
+      'Downloadable CSS Flexbox & Grid visual reference guides',
+      'Lifetime curriculum updates & certificate of completion',
+    ],
+  },
+  {
+    id: 'founder-creator-masterclass',
+    slug: 'founder-creator-masterclass',
+    title: 'Founder & Creator Masterclass (Bid Your Price)',
+    category: 'Courses',
+    price: 499,
+    formattedPrice: 'Bid from ₹99',
+    shortDescription:
+      'Name your price! An exclusive open-bidding masterclass on building digital products, indie business strategy, and creative software craftsmanship.',
+    fullDescription:
+      'Name your price! An exclusive community-driven masterclass on building digital products, indie business strategy, and creative software craftsmanship. Bid any amount you wish (starting from just ₹99) to support the community and unlock full access to live cohort sessions, interactive Q&A, and the complete resource vault.',
+    duration: 'Live Cohort Sessions + Lifetime Access',
+    level: 'All Levels Welcome',
+    isBiddable: true,
+    minBid: 99,
+    modules: [
+      '01. Digital Product Discovery & Market Validation',
+      '02. Zero-to-One Architecture & Indie Tech Stack Selection',
+      '03. Audience Building, Monetization & Payment Workflows',
+      '04. Live Mastermind Q&A & Project Teardowns',
+    ],
+    deliverables: [
+      'Live interactive mastermind session access + full HD recordings',
+      'Complete Indie Creator Notion OS & financial projection templates',
+      'Private BlueBlends community access & peer feedback circle',
+      'Lifetime access pass & personalized founder certificate',
+    ],
+  },
 ];
 
 export function getProductById(productId: string): BackendProduct | undefined {
@@ -112,7 +192,7 @@ export function getProductById(productId: string): BackendProduct | undefined {
 }
 
 export function validateAndCalculateItems(
-  items: { productId: string; quantity: number }[]
+  items: CartItemInput[]
 ): {
   valid: boolean;
   orderItems: OrderItem[];
@@ -138,15 +218,33 @@ export function validateAndCalculateItems(
     }
 
     const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
-    const subtotal = product.price * qty;
+    let effectivePrice = product.price;
+
+    if (product.isBiddable) {
+      const minBid = product.minBid || 1;
+      const proposedBid = Number(item.customPrice);
+      if (isNaN(proposedBid) || proposedBid < minBid) {
+        return {
+          valid: false,
+          orderItems: [],
+          totalAmount: 0,
+          error: `Minimum bid for "${product.title}" is ₹${minBid}`,
+        };
+      }
+      effectivePrice = Math.round(proposedBid);
+    }
+
+    const subtotal = effectivePrice * qty;
     totalAmount += subtotal;
 
     orderItems.push({
       productId: product.id,
       title: product.title,
-      price: product.price,
+      price: effectivePrice,
       quantity: qty,
       subtotal,
+      isBiddable: product.isBiddable,
+      bidAmount: product.isBiddable ? effectivePrice : undefined,
     });
   }
 

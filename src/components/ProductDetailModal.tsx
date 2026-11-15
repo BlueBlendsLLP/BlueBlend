@@ -6,8 +6,8 @@ import { ResilientImage } from './ResilientImage';
 interface ProductDetailModalProps {
   product: Product | null;
   onClose: () => void;
-  onAddToCart: (product: Product, quantity: number) => void;
-  onBuyNow: (product: Product, quantity: number) => void;
+  onAddToCart: (product: Product, quantity: number, customPrice?: number) => void;
+  onBuyNow: (product: Product, quantity: number, customPrice?: number) => void;
 }
 
 export function ProductDetailModal({
@@ -17,12 +17,49 @@ export function ProductDetailModal({
   onBuyNow,
 }: ProductDetailModalProps) {
   const [quantity, setQuantity] = useState(1);
+  const [bidAmount, setBidAmount] = useState(499);
+  const [bidError, setBidError] = useState('');
 
   useEffect(() => {
     setQuantity(1);
-  }, [product?.id]);
+    if (product?.isBiddable) {
+      setBidAmount(product.minBid ? Math.max(product.minBid, 499) : 499);
+      setBidError('');
+    }
+  }, [product?.id, product?.isBiddable, product?.minBid]);
 
   if (!product) return null;
+
+  const minBid = product.minBid || 99;
+  const effectivePrice = product.isBiddable ? bidAmount : product.price;
+  const totalAmount = effectivePrice * quantity;
+
+  const handleBidChange = (val: number) => {
+    setBidAmount(val);
+    if (val < minBid) {
+      setBidError(`Minimum bid is ₹${minBid}`);
+    } else {
+      setBidError('');
+    }
+  };
+
+  const handleAddAction = () => {
+    if (product.isBiddable && bidAmount < minBid) {
+      setBidError(`Please enter at least ₹${minBid} to place a bid.`);
+      return;
+    }
+    onAddToCart(product, quantity, product.isBiddable ? bidAmount : undefined);
+    onClose();
+  };
+
+  const handleBuyAction = () => {
+    if (product.isBiddable && bidAmount < minBid) {
+      setBidError(`Please enter at least ₹${minBid} to place a bid.`);
+      return;
+    }
+    onBuyNow(product, quantity, product.isBiddable ? bidAmount : undefined);
+    onClose();
+  };
 
   return (
     <div
@@ -82,29 +119,100 @@ export function ProductDetailModal({
           <div className="lg:col-span-6 flex flex-col justify-between gap-6">
             <div className="space-y-5">
               <div>
-                <p className="text-xs text-[#626262] mb-1">
-                  {product.category} · {product.duration} · {product.level}
-                </p>
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  <span className="text-xs text-[#626262]">
+                    {product.category} · {product.duration} · {product.level}
+                  </span>
+                  {product.isBiddable && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#005EFF]/10 text-[#005EFF] text-[11px] font-semibold">
+                      ⚡ Community Bid Masterclass
+                    </span>
+                  )}
+                </div>
                 <h2
                   id="pdp-title"
                   className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#0D0D0D]"
                 >
                   {product.title}
                 </h2>
-                <p className="mt-3 font-mono text-2xl font-medium text-[#0D0D0D] tabular-nums">
-                  {product.formattedPrice}
-                </p>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="font-mono text-2xl font-medium text-[#0D0D0D] tabular-nums">
+                    ₹{totalAmount.toLocaleString('en-IN')}.00
+                  </span>
+                  {product.isBiddable && (
+                    <span className="text-xs text-[#626262] font-mono">
+                      (₹{bidAmount.toLocaleString('en-IN')} × {quantity})
+                    </span>
+                  )}
+                </div>
               </div>
 
               <p className="text-sm sm:text-[15px] text-[#626262] leading-relaxed">
                 {product.fullDescription}
               </p>
 
+              {/* Special Bidding Box for Biddable Product */}
+              {product.isBiddable && (
+                <div className="p-4 rounded-xl bg-[#F0F5FF] border border-[#005EFF]/25 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-semibold text-[#005EFF] tracking-wide uppercase">
+                        Name Your Price / Place Your Bid
+                      </h4>
+                      <p className="text-xs text-[#626262] mt-0.5">
+                        Minimum bid: ₹{minBid} · Enter any amount you want to contribute
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Preset Bid Chips */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[minBid, 299, 499, 999, 1999].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => handleBidChange(amt)}
+                        className={`px-2.5 py-1 text-xs font-mono rounded-md border transition-colors ${
+                          bidAmount === amt
+                            ? 'bg-[#005EFF] text-white border-[#005EFF] font-semibold'
+                            : 'bg-white text-[#0D0D0D] border-black/15 hover:border-[#005EFF]'
+                        }`}
+                      >
+                        ₹{amt.toLocaleString('en-IN')}{amt === minBid ? ' (Min)' : amt === 499 ? ' (Popular)' : ''}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Custom Bid Input */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <label htmlFor="custom-bid-input" className="text-xs font-medium text-[#0D0D0D]">
+                      Custom Amount:
+                    </label>
+                    <div className="relative inline-flex items-center">
+                      <span className="absolute left-2.5 text-xs text-[#626262] font-mono">₹</span>
+                      <input
+                        id="custom-bid-input"
+                        type="number"
+                        min={minBid}
+                        step="1"
+                        value={bidAmount}
+                        onChange={(e) => handleBidChange(parseInt(e.target.value) || 0)}
+                        className="pl-6 pr-3 py-1.5 w-32 text-xs font-mono font-medium border border-black/20 rounded-md bg-white text-[#0D0D0D] focus:border-[#005EFF] focus:ring-1 focus:ring-[#005EFF] outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {bidError && (
+                    <p className="text-xs text-[#DC2626] font-medium">{bidError}</p>
+                  )}
+                </div>
+              )}
+
               {/* Quantity & Action Buttons */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center gap-4">
                   <span className="text-xs font-medium text-[#626262]">
-                    Quantity
+                    Seats / Quantity
                   </span>
                   <div className="inline-flex items-center border border-black/[0.14] rounded-lg">
                     <button
@@ -132,23 +240,17 @@ export function ProductDetailModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      onAddToCart(product, quantity);
-                      onClose();
-                    }}
+                    onClick={handleAddAction}
                     className="w-full py-3 px-5 min-h-[44px] bg-[#0D0D0D] hover:bg-[#212121] text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
                   >
-                    Add to Cart
+                    {product.isBiddable ? 'Place Bid & Add to Cart' : 'Add to Cart'}
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      onBuyNow(product, quantity);
-                      onClose();
-                    }}
+                    onClick={handleBuyAction}
                     className="w-full py-3 px-5 min-h-[44px] bg-[#005EFF] hover:bg-[#0F2CCF] text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
                   >
-                    Buy Now
+                    {product.isBiddable ? `Bid & Enroll (₹${totalAmount.toLocaleString('en-IN')})` : 'Buy Now'}
                   </button>
                 </div>
               </div>

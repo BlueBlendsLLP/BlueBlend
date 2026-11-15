@@ -35,7 +35,7 @@ async function testHttpEndpoints() {
     const productsRes = await fetch(`${baseUrl}/api/products`);
     assert.strictEqual(productsRes.status, 200);
     const productsData = await productsRes.json();
-    assert.strictEqual(productsData.count, 4);
+    assert.strictEqual(productsData.count, 7);
     assert.strictEqual(productsData.products[0].id, 'web-designing-course');
     console.log('✓ GET /api/products passed.');
 

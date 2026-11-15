@@ -9,27 +9,55 @@ async function runTests() {
 
   // Test 1: Verify product catalog integrity
   console.log('1. Testing product catalog...');
-  assert.strictEqual(BACKEND_PRODUCTS.length, 4, 'Should have 4 courses listed');
+  assert.strictEqual(BACKEND_PRODUCTS.length, 7, 'Should have 7 courses listed');
   const webDesign = BACKEND_PRODUCTS.find((p) => p.id === 'web-designing-course');
   assert.ok(webDesign, 'Web Designing Course must exist');
   assert.strictEqual(webDesign?.price, 9999, 'Web Designing Course price should be 9999');
+
+  const jsCourse = BACKEND_PRODUCTS.find((p) => p.id === 'fullstack-javascript-bootcamp');
+  assert.ok(jsCourse, 'JavaScript course must exist');
+  assert.strictEqual(jsCourse?.price, 999, 'JavaScript course price must be 999');
+
+  const htmlCourse = BACKEND_PRODUCTS.find((p) => p.id === 'html-css-masterclass');
+  assert.ok(htmlCourse, 'HTML/CSS course must exist');
+  assert.strictEqual(htmlCourse?.price, 499, 'HTML/CSS course price must be 499');
+
+  const biddableCourse = BACKEND_PRODUCTS.find((p) => p.id === 'founder-creator-masterclass');
+  assert.ok(biddableCourse, 'Founder Masterclass must exist');
+  assert.strictEqual(biddableCourse?.isBiddable, true, 'Founder course must be biddable');
+  assert.strictEqual(biddableCourse?.minBid, 99, 'Founder course min bid must be 99');
   console.log('✓ Product catalog verified.');
 
-  // Test 2: Price and total amount calculation (anti-tampering check)
-  console.log('2. Testing authoritative price calculations...');
+  // Test 2: Price and total amount calculation (anti-tampering & custom bidding check)
+  console.log('2. Testing authoritative price calculations & custom bidding...');
   const calc1 = validateAndCalculateItems([
     { productId: 'web-designing-course', quantity: 2 },
     { productId: 'python-course', quantity: 1 },
+    { productId: 'fullstack-javascript-bootcamp', quantity: 1 },
+    { productId: 'html-css-masterclass', quantity: 1 },
   ]);
   assert.strictEqual(calc1.valid, true, 'Calculation should be valid');
-  assert.strictEqual(calc1.totalAmount, 9999 * 2 + 99999, 'Total must match server prices');
-  assert.strictEqual(calc1.orderItems.length, 2);
+  assert.strictEqual(calc1.totalAmount, 9999 * 2 + 99999 + 999 + 499, 'Total must match server prices');
+  assert.strictEqual(calc1.orderItems.length, 4);
+
+  // Test custom bid calculation
+  const calcBid = validateAndCalculateItems([
+    { productId: 'founder-creator-masterclass', quantity: 1, customPrice: 750 },
+  ]);
+  assert.strictEqual(calcBid.valid, true, 'Custom bid should be valid');
+  assert.strictEqual(calcBid.totalAmount, 750, 'Total should equal custom bid');
+
+  // Test bid below minimum
+  const calcLowBid = validateAndCalculateItems([
+    { productId: 'founder-creator-masterclass', quantity: 1, customPrice: 40 },
+  ]);
+  assert.strictEqual(calcLowBid.valid, false, 'Bid below minBid should be rejected');
 
   const calcInvalid = validateAndCalculateItems([
     { productId: 'non-existent-product', quantity: 1 },
   ]);
   assert.strictEqual(calcInvalid.valid, false, 'Invalid product should be rejected');
-  console.log('✓ Anti-tampering price calculation verified.');
+  console.log('✓ Anti-tampering price calculation & bidding logic verified.');
 
   // Test 3: Order Creation
   console.log('3. Testing Cashfree order creation...');

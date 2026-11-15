@@ -121,24 +121,47 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleAddToCart = (product: Product, quantity = 1) => {
+  const handleAddToCart = (product: Product, quantity = 1, customPrice?: number) => {
     setCartItems((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
         return prev.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? {
+                ...item,
+                quantity: item.quantity + quantity,
+                customPrice: customPrice ?? item.customPrice,
+              }
             : item
         );
       }
-      return [...prev, { product, quantity }];
+      return [
+        ...prev,
+        {
+          product,
+          quantity,
+          customPrice: customPrice ?? (product.isBiddable ? product.minBid : undefined),
+        },
+      ];
     });
-    setToastMessage(`Added ${product.title} to cart`);
+    setToastMessage(
+      customPrice
+        ? `Added ${product.title} (Bid: ₹${customPrice.toLocaleString('en-IN')}) to cart`
+        : `Added ${product.title} to cart`
+    );
   };
 
-  const handleBuyNow = (product: Product, quantity = 1) => {
-    handleAddToCart(product, quantity);
+  const handleBuyNow = (product: Product, quantity = 1, customPrice?: number) => {
+    handleAddToCart(product, quantity, customPrice);
     setCartOpen(true);
+  };
+
+  const handleUpdateCustomPrice = (productId: string, customPrice: number) => {
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.product.id === productId ? { ...item, customPrice } : item
+      )
+    );
   };
 
   const handleUpdateQuantity = (productId: string, quantity: number) => {
@@ -251,6 +274,7 @@ export default function App() {
         items={cartItems}
         onClose={() => setCartOpen(false)}
         onUpdateQuantity={handleUpdateQuantity}
+        onUpdateCustomPrice={handleUpdateCustomPrice}
         onRemoveItem={handleRemoveItem}
         onClearCart={handleClearCart}
         onBrowseShop={handleNavigateShop}

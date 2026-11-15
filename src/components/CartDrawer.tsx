@@ -72,6 +72,7 @@ async function ensureCashfreeLoaded(): Promise<any> {
 export interface CartItem {
   product: Product;
   quantity: number;
+  customPrice?: number;
 }
 
 export interface ConfirmedOrderDetails {
@@ -93,6 +94,7 @@ interface CartDrawerProps {
   items: CartItem[];
   onClose: () => void;
   onUpdateQuantity: (productId: string, quantity: number) => void;
+  onUpdateCustomPrice?: (productId: string, customPrice: number) => void;
   onRemoveItem: (productId: string) => void;
   onClearCart: () => void;
   onBrowseShop: () => void;
@@ -106,6 +108,7 @@ export function CartDrawer({
   items,
   onClose,
   onUpdateQuantity,
+  onUpdateCustomPrice,
   onRemoveItem,
   onClearCart,
   onBrowseShop,
@@ -142,7 +145,7 @@ export function CartDrawer({
   if (!isOpen) return null;
 
   const subtotal = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + (item.customPrice ?? item.product.price) * item.quantity,
     0
   );
 
@@ -180,6 +183,7 @@ export function CartDrawer({
           items: items.map((i) => ({
             productId: i.product.id,
             quantity: i.quantity,
+            customPrice: i.customPrice,
           })),
           customer: {
             name: fullName.trim(),
@@ -277,7 +281,11 @@ export function CartDrawer({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: items.map((i) => ({ productId: i.product.id, quantity: i.quantity })),
+          items: items.map((i) => ({
+            productId: i.product.id,
+            quantity: i.quantity,
+            customPrice: i.customPrice,
+          })),
           customer: { name: customerName, email: customerEmail, phone: customerPhone },
         }),
       });
@@ -497,77 +505,111 @@ export function CartDrawer({
             </div>
           ) : step === 'cart' ? (
             <ul className="divide-y divide-black/[0.08]">
-              {items.map(({ product, quantity }) => (
-                <li key={product.id} className="py-4 flex gap-4">
-                  <div className="w-20 h-16 rounded-lg overflow-hidden bg-[#F3F3F3] shrink-0 border border-black/[0.06]">
-                    <ResilientImage
-                      src={product.image}
-                      alt={product.imageAlt}
-                      fallbackLabel={product.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-display text-sm font-semibold text-[#0D0D0D] truncate">
-                        {product.title}
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => onRemoveItem(product.id)}
-                        aria-label={`Remove ${product.title} from cart`}
-                        className="inline-flex items-center gap-1 text-xs text-[#8C8C8C] hover:text-[#DC2626] transition-colors px-1.5 py-0.5 rounded hover:bg-[#FEF2F2] shrink-0"
-                        title={`Remove ${product.title}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                        <span className="hidden sm:inline">Remove</span>
-                      </button>
+              {items.map(({ product, quantity, customPrice }) => {
+                const itemPrice = customPrice ?? product.price;
+                return (
+                  <li key={product.id} className="py-4 flex gap-4">
+                    <div className="w-20 h-16 rounded-lg overflow-hidden bg-[#F3F3F3] shrink-0 border border-black/[0.06]">
+                      <ResilientImage
+                        src={product.image}
+                        alt={product.imageAlt}
+                        fallbackLabel={product.title}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <p className="font-mono text-xs text-[#626262] tabular-nums mt-0.5">
-                      {product.formattedPrice}
-                    </p>
-                    <div className="mt-3 flex items-center justify-between">
-                      <div className="inline-flex items-center border border-black/[0.14] rounded-md">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-display text-sm font-semibold text-[#0D0D0D] truncate">
+                          {product.title}
+                        </h3>
                         <button
                           type="button"
-                          onClick={() =>
-                            onUpdateQuantity(product.id, quantity - 1)
-                          }
-                          aria-label={
-                            quantity === 1
-                              ? `Remove ${product.title}`
-                              : `Decrease quantity for ${product.title}`
-                          }
-                          className="w-7 h-7 inline-flex items-center justify-center hover:bg-[#F3F3F3] text-[#626262] hover:text-[#DC2626] transition-colors"
-                          title={quantity === 1 ? 'Remove from cart' : 'Decrease'}
+                          onClick={() => onRemoveItem(product.id)}
+                          aria-label={`Remove ${product.title} from cart`}
+                          className="inline-flex items-center gap-1 text-xs text-[#8C8C8C] hover:text-[#DC2626] transition-colors px-1.5 py-0.5 rounded hover:bg-[#FEF2F2] shrink-0"
+                          title={`Remove ${product.title}`}
                         >
-                          {quantity === 1 ? (
-                            <Trash2 className="w-3.5 h-3.5 text-[#DC2626]" aria-hidden="true" />
-                          ) : (
-                            <Minus className="w-3.5 h-3.5" aria-hidden="true" />
-                          )}
-                        </button>
-                        <span className="w-7 text-center font-mono text-xs tabular-nums">
-                          {quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onUpdateQuantity(product.id, quantity + 1)
-                          }
-                          aria-label={`Increase quantity for ${product.title}`}
-                          className="w-7 h-7 inline-flex items-center justify-center hover:bg-[#F3F3F3]"
-                        >
-                          <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span className="hidden sm:inline">Remove</span>
                         </button>
                       </div>
-                      <span className="font-mono text-sm font-medium text-[#0D0D0D] tabular-nums">
-                        ₹{(product.price * quantity).toLocaleString('en-IN')}.00
-                      </span>
+                      <p className="font-mono text-xs text-[#626262] tabular-nums mt-0.5">
+                        {customPrice ? (
+                          <span className="text-[#005EFF] font-medium">
+                            Your Bid: ₹{customPrice.toLocaleString('en-IN')}.00
+                          </span>
+                        ) : (
+                          product.formattedPrice
+                        )}
+                      </p>
+
+                      {product.isBiddable && (
+                        <div className="mt-2 p-2 bg-[#F0F5FF] border border-[#005EFF]/20 rounded-md">
+                          <div className="flex items-center justify-between text-[11px] mb-1">
+                            <span className="font-semibold text-[#005EFF]">⚡ Adjust Your Bid</span>
+                            <span className="text-[#626262]">Min ₹{product.minBid || 99}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-mono font-medium text-[#0D0D0D]">₹</span>
+                            <input
+                              type="number"
+                              min={product.minBid || 99}
+                              step="1"
+                              value={customPrice ?? product.minBid ?? 99}
+                              onChange={(e) => {
+                                const val = Math.max(product.minBid || 99, parseInt(e.target.value) || (product.minBid || 99));
+                                onUpdateCustomPrice?.(product.id, val);
+                              }}
+                              className="w-24 px-2 py-0.5 text-xs font-mono border border-black/15 rounded bg-white text-[#0D0D0D] focus:border-[#005EFF] focus:outline-none"
+                            />
+                            <span className="text-[11px] text-[#626262]">per seat</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="inline-flex items-center border border-black/[0.14] rounded-md">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onUpdateQuantity(product.id, quantity - 1)
+                            }
+                            aria-label={
+                              quantity === 1
+                                ? `Remove ${product.title}`
+                                : `Decrease quantity for ${product.title}`
+                            }
+                            className="w-7 h-7 inline-flex items-center justify-center hover:bg-[#F3F3F3] text-[#626262] hover:text-[#DC2626] transition-colors"
+                            title={quantity === 1 ? 'Remove from cart' : 'Decrease'}
+                          >
+                            {quantity === 1 ? (
+                              <Trash2 className="w-3.5 h-3.5 text-[#DC2626]" aria-hidden="true" />
+                            ) : (
+                              <Minus className="w-3.5 h-3.5" aria-hidden="true" />
+                            )}
+                          </button>
+                          <span className="w-7 text-center font-mono text-xs tabular-nums">
+                            {quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onUpdateQuantity(product.id, quantity + 1)
+                            }
+                            aria-label={`Increase quantity for ${product.title}`}
+                            className="w-7 h-7 inline-flex items-center justify-center hover:bg-[#F3F3F3]"
+                          >
+                            <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                          </button>
+                        </div>
+                        <span className="font-mono text-sm font-medium text-[#0D0D0D] tabular-nums">
+                          ₹{(itemPrice * quantity).toLocaleString('en-IN')}.00
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <form
@@ -586,33 +628,43 @@ export function CartDrawer({
 
                 {/* Item List with Remove in Checkout */}
                 <ul className="divide-y divide-black/[0.06] pt-1">
-                  {items.map(({ product, quantity }) => (
-                    <li key={product.id} className="py-2 flex items-center justify-between text-xs gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[#8C8C8C] font-mono tabular-nums shrink-0">{quantity}×</span>
-                        <span className="truncate text-[#0D0D0D]">{product.title}</span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-mono text-[#0D0D0D] tabular-nums font-medium">
-                          ₹{(product.price * quantity).toLocaleString('en-IN')}.00
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onRemoveItem(product.id);
-                            if (items.length <= 1) {
-                              setStep('cart');
-                            }
-                          }}
-                          aria-label={`Remove ${product.title} from checkout`}
-                          className="text-[#8C8C8C] hover:text-[#DC2626] p-1 rounded hover:bg-black/[0.05] transition-colors"
-                          title="Remove item"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                        </button>
-                      </div>
-                    </li>
-                  ))}
+                  {items.map(({ product, quantity, customPrice }) => {
+                    const itemPrice = customPrice ?? product.price;
+                    return (
+                      <li key={product.id} className="py-2 flex items-center justify-between text-xs gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-[#8C8C8C] font-mono tabular-nums shrink-0">{quantity}×</span>
+                          <span className="truncate text-[#0D0D0D]">
+                            {product.title}
+                            {customPrice ? (
+                              <span className="text-[#005EFF] font-mono ml-1 font-medium">
+                                (Bid: ₹{customPrice.toLocaleString('en-IN')})
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-mono text-[#0D0D0D] tabular-nums font-medium">
+                            ₹{(itemPrice * quantity).toLocaleString('en-IN')}.00
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onRemoveItem(product.id);
+                              if (items.length <= 1) {
+                                setStep('cart');
+                              }
+                            }}
+                            aria-label={`Remove ${product.title} from checkout`}
+                            className="text-[#8C8C8C] hover:text-[#DC2626] p-1 rounded hover:bg-black/[0.05] transition-colors"
+                            title="Remove item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 <div className="pt-2 border-t border-black/[0.06] space-y-1.5">
